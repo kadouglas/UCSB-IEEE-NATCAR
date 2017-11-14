@@ -1,10 +1,6 @@
 # UCSB-IEEE-NATCAR
-<<<<<<< HEAD
 
-hi
-=======
-###Kyle Douglas
-IEEE is gonna kick Berkeley's ass
+Kyle Douglas   
+Brandon Dutcher
 
-####Brandon Dutcher
-prefers to be called Dutchling or Dutchlet
+
