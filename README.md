@@ -1,7 +1,7 @@
 # UCSB-IEEE-NATCAR
 
 Kyle Douglas   
-Brandon Dutcher
-William Cai
-Boning Dong
+Brandon Dutcher   
+William Cai   
+Boning Dong   
 
