@@ -2,6 +2,8 @@
 
 Kyle Douglas   
 Brandon Dutcher
-Raina Jang  
-
+Raina Jang    
+William Cai   
+Boning Dong   
+Byron Aguilar   
 
