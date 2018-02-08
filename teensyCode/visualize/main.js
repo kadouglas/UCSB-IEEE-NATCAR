@@ -24,11 +24,26 @@ function mouseMoved() {
 		image.fill('#000000');
 		image.rect(mouseX, mouseY, 10, 10);
 		image.draw();
+
+		average(image, 200);
 	}
 
 	if (0 <= mouseX && mouseX < 500 &&
 		500 <= mouseY && mouseY < 1000) {
 		drawTrace(mouseX, mouseY - 500);
+	}
+}
+
+function mousePressed() {
+	if (mouseIsPressed &&
+		mouseX < 500 &&
+		mouseY < 500) {
+		
+		image.fill('#000000');
+		image.rect(mouseX, mouseY, 10, 10);
+		image.draw();
+
+		average(image, 200);
 	}
 }
 
@@ -43,8 +58,8 @@ function delta(p0, p1, dir) {
 	var dAng = dTheta(ArcTan(dx, dy), dir);
 	var dist = Math.sqrt(dx*dx+dy*dy);
 
-	return 200*Math.abs(dAng*dAng) + dist;
-	return smooth(10*dAng)*smooth(0.015*dist);
+	return 200*Math.abs(dAng*dAng*dAng) + dist;
+	// return smooth(10*dAng)*smooth(0.015*dist);
 }
 
 function dTheta(t0, t1) {
@@ -58,14 +73,14 @@ function dTheta(t0, t1) {
 	return dt;
 }
 
-function drawTrace(x, y) {
+function drawTrace(x0, y0) {
 	var cvs = new DrawingRegion(0, 500, 500, 500);
 
 	var id = cvs.ctx.createImageData(500, 500);
 	var data = id.data;
 
 	var hData = hm.ctx.getImageData(0, 0, 500, 500).data;
-	var test = hData[4*x + 2000*y];
+	var test = hData[4*x0 + 2000*y0];
 
 	for (var x = 0; x < 500; x++) {
 		for (var y = 0; y < 500; y++) {
@@ -79,6 +94,9 @@ function drawTrace(x, y) {
 	}
 
 	cvs.ctx.putImageData(id, 0, 0);
+	cvs.fill('#FFFFFF');
+	cvs.text(delta({x: 250, y: 250}, {x: x0, y: y0}, 3*Math.PI/2), 10, 30);
+
 	hm.draw();
 	cvs.draw();
 }
@@ -138,12 +156,12 @@ function makeHeatMap() {
 	cvs.draw();
 }
 
-function average(image) {
+function average(image, limit) {
 	var t0 = performance.now();
 
 	var points = [{x: 250, y: 499}];
 
-	var searchR = 50;
+	var searchR = 20;
 
 	var newRegion = new DrawingRegion(500, 0, 500, 500);
 	newRegion.stroke('#000000');
@@ -168,6 +186,8 @@ function average(image) {
 			newData[i+3] = 255;
 		}
 	}
+
+	t0 = performance.now();
 
 	for (var x = 0; x < 500; x++) {
 		for (var y = 0; y < 500; y++) {
@@ -216,54 +236,50 @@ function average(image) {
 		}
 	}
 
+	var dt = Math.round(1000*(performance.now() - t0))/1000;
+	pr('Time: ' + dt + ' ms');
+
 	newRegion.ctx.putImageData(newImage, 0, 0);
 
-	pr(points);
+	// pr(points);
 
 	// find adjacent points
 	var dir = 3*Math.PI/2;
-
-	for (var i = 0; i < points.length; i++) {
-		var p0 = points[i];
-
-		var minD1 = null;
-		var minD2 = null;
-		var minI1 = null;
-		var minI2 = null;
-		for (var j = 0; j < points.length; j++) {
-			if (i === j) {
-				continue;
-			}
-
-			var p1 = points[j];
-
-			var dx = p1.x - p0.x;
-			var dy = p1.y - p0.y;
-
-			var testD = dx*dx + dy*dy;
-
-			if (minD2 === null || testD < minD2) {
-				if (minD1 === null || testD < minD1) {
-					minD2 = minD1;
-					minI2 = minI1;
-
-					minD1 = testD;
-					minI1 = j;
-				} else {
-					minD2 = testD;
-					minI2 = j; 
+	var p = points[0];
+	var chosen = [];
+	var chosenCount = 1;
+	for (var i in points) {
+		chosen.push(false);
+	}
+	chosen[0] = true;
+	while (chosenCount < points.length) {
+		var minD = null;
+		var minI = null;
+		for (var i in points) {
+			if (!chosen[i]) {
+				var p1 = points[i];
+				var testD = delta(p, p1, dir);
+				if (minD === null || testD < minD) {
+					minD = testD;
+					minI = i;
 				}
 			}
 		}
-		if (minI1 !== null) {
-			p0.p1 = points[minI1];
-			newRegion.line(p0.x, p0.y, p0.p1.x, p0.p1.y);
+
+		if (minD > limit) {
+			break;
 		}
-		if (minI2 !== null) {
-			p0.p2 = points[minI2];
-			newRegion.line(p0.x, p0.y, p0.p2.x, p0.p2.y);
-		}
+
+		var p1 = points[minI];
+		chosen[minI] = true;
+		chosenCount++;
+		dir = ArcTan(p1.x - p.x, p1.y - p.y);
+		newRegion.line(p.x, p.y, p1.x, p1.y);
+		p = p1;
 	}
+
+	var dt = Math.round(1000*(performance.now() - t0))/1000;
+	pr('Time: ' + dt + ' ms');
 
 	newRegion.draw();
 
