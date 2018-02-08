@@ -51,6 +51,8 @@ function smooth(x) {
 	return x*x*x*x + 1;
 }
 
+// find the delta from point 0 to point 1
+// with direction dir (radians)
 function delta(p0, p1, dir) {
 	var dx = p1.x - p0.x;
 	var dy = p1.y - p0.y;
