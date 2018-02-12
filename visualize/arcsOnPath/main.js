@@ -1,14 +1,24 @@
+const smoothN = 1;
+
 var PI = Math.PI;
 // var points = [{"x":199,"y":358},{"x":199,"y":281},{"x":264,"y":249},{"x":325,"y":286},{"x":323,"y":326},{"x":293,"y":375},{"x":240,"y":391},{"x":142,"y":395},{"x":113,"y":329},{"x":110,"y":255},{"x":77,"y":202},{"x":35,"y":237},{"x":29,"y":286}];
+
+// a point is an object with x and y properies
 var points = [];
 
+// run at begining
 function main() {
+	// initialize the canvas
 	fullscreenCanvas();
 
+	// RED
 	mainRegion.background = '#FF0000';
 	fillBackground();
 
+	// draw the first square
 	drawImage();
+
+	// draw the result square
 	drawImage2();
 }
 
@@ -17,6 +27,7 @@ function mouseMoved() {
 }
 
 function mousePressed() {
+	// add points to path
 	if (mouseIsPressed &&
 		mouseX < 500 &&
 		mouseY < 500) {
@@ -30,16 +41,8 @@ function mousePressed() {
 	drawImage2();
 }
 
-function reduceAng(a) {
-	a = a % PI;
-	if (a < -PI) {
-		a += 2*PI;
-	} else if (a > PI) {
-		a -= 2*PI;
-	}
-	return a;
-}
-
+// get properties of a circle passing through p0 and p1
+// with initial direction of dir (radians)
 function getCircleInfo(p0, p1, dir) {
 	var dx = p1.x - p0.x;
 	var dy = p1.y - p0.y;
@@ -58,11 +61,6 @@ function getCircleInfo(p0, p1, dir) {
 	var cyp = (xp*xp + yp*yp)/(2*yp);
 	var r = cyp;
 
-	// middle x' and y'
-	var mAng = ArcTan(xp, yp - cyp);
-	var mxp = r * Math.cos(mAng);
-	var myp = r * Math.sin(mAng) + cyp;
-
 	// end direction
 	var endDir = dir + PI/2 + ArcTan(xp, (yp*yp - xp*xp)/(2*yp));
 	if (r < 0) {
@@ -73,12 +71,6 @@ function getCircleInfo(p0, p1, dir) {
 	sin = -sin;
 	var cx = p0.x + cos*cxp - sin*cyp;
 	var cy = p0.y + sin*cxp + cos*cyp;
-
-	// rotate and shift mid x' and y' back
-	// var mx = p0.x + cos*mxp - sin*myp;
-	// var my = p0.y + sin*mxp + cos*myp;
-	var mx = cx + r * Math.cos(dir + mAng);
-	var my = cy + r * Math.sin(dir + mAng);
 
 	// get start angles
 	dx = p0.x - cx;
@@ -107,16 +99,20 @@ function getCircleInfo(p0, p1, dir) {
 		a1 -= 2*PI;
 	}
 
-	// var ma = a0 + (a1 - a0)/2;
+	// angle of middle of arc
 	var ma = (a0 + a1)/2;
-	// var md = ma + PI/2;
 	if (r < 0) {
 		ma += PI;
 	}
+
+	// direction at middle of arc
 	var md = ma + PI/2;
+
+	// get coords of middle of arc
 	var mx = cx + r * Math.cos(ma);
 	var my = cy + r * Math.sin(ma);
 
+	// return an object with all the circle properties
 	return {
 		cx: cx,
 		cy: cy,
@@ -130,34 +126,18 @@ function getCircleInfo(p0, p1, dir) {
 	};
 }
 
+// smooth the points beginning in direction dir
 function nextPoints(pts, dir) {
-	// create a new image
-	// var image = new DrawingRegion(500, 0, 500, 500);
-	// image.background = '#FFFFFF';
-	// image.fillBackground();
-
 	// copy pts
 	var newPts = [];
 	for (var p of pts) {
 		newPts.push({x: p.x, y: p.y});
 	}
 
-	// // draw the points
-	// for (var p of pts) {
-	// 	image.arc(p.x, p.y, 5, 0, 2*PI);
-	// }
-
-	// // draw the lines
-	// for (var i = 0; i < pts.length-2; i++) {
-	// 	var p0 = pts[i];
-	// 	var p1 = pts[i+2];
-	// 	image.line(p0.x, p0.y, p1.x, p1.y);
-	// }
-
 	// do the computations
 	var dirs = [];
 	for (var i = 0; i < pts.length-2; i++) {
-		// the first point get the argument dir
+		// the first point gets the argument dir
 		if (i === 0) {
 			dirs.push(dir);
 		}
@@ -165,9 +145,11 @@ function nextPoints(pts, dir) {
 		// current dir
 		var d = dirs[i];
 
-		// make a circle from p0 to p1 in dir d
+		// reference points for the arc
 		var p0 = pts[i];
 		var p1 = pts[i+2];
+
+		// point in between p0 and p1 to shift
 		var p3 = newPts[i+1];
 
 		// get circle information
@@ -182,44 +164,28 @@ function nextPoints(pts, dir) {
 		dirs.push(ci.md);
 	}
 
-	// // draw the new points
-	// image.stroke('#FF00FF');
-	// for (var p of newPts) {
-	// 	image.arc(p.x, p.y, 5, 0, 2*PI);
-	// }
-
-	// // draw the dirs
-	// for (var i = 0; i < dirs.length; i++) {
-	// 	var p = pts[i];
-	// 	var d = dirs[i];
-	// 	image.line(
-	// 		p.x,
-	// 		p.y,
-	// 		p.x + 30*Math.cos(d),
-	// 		p.y + 30*Math.sin(d)
-	// 	);
-	// }
-
-	// image.draw();
 	return newPts;
 }
 
+// draw the resulting image
 function drawImage2() {
 	// create a new image
 	var image = new DrawingRegion(500, 0, 500, 500);
 	image.background = '#FFFFFF';
 	image.fillBackground();
 
-	var pts = smoothPoints(points, 3*PI/2, 100);
-	// var pts = nextPoints(points, 3*PI/2);
-	// pts = nextPoints(pts, 3*PI/2);
+	// smooth the points starting in direction 3pi/2
+	// 100 times
 	var dir = 3*PI/2;
+	var pts = smoothPoints(points, dir, smoothN);
+
 	// draw the points
 	image.stroke('#000000');
 	for (var p of pts) {
 		image.arc(p.x, p.y, 5, 0, 2*PI);
 	}
 
+	// draw the arcs connecting the points
 	for (var i = 0; i < pts.length-1; i++) {
 		var p0 = pts[i];
 		var p1 = pts[i+1];
@@ -228,23 +194,21 @@ function drawImage2() {
 		var ci = getCircleInfo(p0, p1, dir);
 		dir = ci.df;
 
+		// different colors for different directions
 		if (ci.r > 0) {
 			image.stroke('#000000');
 		} else {
 			image.stroke('#00FF00');
 		}
 
+		// draw the circle
 		image.arc(ci.cx, ci.cy, Math.abs(ci.r), ci.a0, ci.a1);
-		// image.arc(ci.cx, ci.cy, 5, 0, 2*PI);
-		// image.arc(ci.mx, ci.my, 5, 0, 2*PI);
-
-		// image.stroke('#FF0000');
-		// image.line(ci.mx, ci.my, ci.mx + 20*Math.cos(ci.md), ci.my + 20*Math.sin(ci.md))
 	}
 
 	image.draw();
 }
 
+// apply the smoothing function n times
 function smoothPoints(pts, dir, n) {
 	for (var i = 0; i < n; i++) {
 		pts = nextPoints(pts, dir);
@@ -253,7 +217,13 @@ function smoothPoints(pts, dir, n) {
 }
 
 function drawImage() {
+	// create a new image to draw the points
+	var image = new DrawingRegion(0, 0, 500, 500);
+	image.background = '#FFFFFF';
+	image.fillBackground();
+
 	if (points.length === 0) {
+		image.draw();
 		return;
 	}
 
@@ -262,11 +232,6 @@ function drawImage() {
 		mouseX - points[0].x,
 		mouseY - points[0].y
 	);
-
-	// create a new image to draw the points
-	var image = new DrawingRegion(0, 0, 500, 500);
-	image.background = '#FFFFFF';
-	image.fillBackground();
 
 	// draw the points
 	image.fill('#000000');
@@ -305,6 +270,7 @@ function drawImage() {
 		// image.line(ci.mx, ci.my, ci.mx + 20*Math.cos(ci.md), ci.my + 20*Math.sin(ci.md))
 	}
 
+	// draw the directions at each point
 	if (points.length > 0) {
 		var p0 = points[points.length-1];
 		image.stroke('#42d9f4');
@@ -312,15 +278,4 @@ function drawImage() {
 	}
 
 	image.draw();
-}
-
-function dTheta(t0, t1) {
-	var dt = (t1 - t0) % (2*Math.PI);
-	if (dt > Math.PI) {
-		dt -= 2*Math.PI;
-	} else if (dt < -Math.PI) {
-		dt += 2*Math.PI;
-	}
-
-	return dt;
 }

@@ -1,23 +1,5 @@
-// function ArcTan(x, y) {
-// 	if (x === 0) {
-// 		if (y > 0) {
-// 			return Math.PI/2;
-// 		}
-// 		return -Math.PI/2;
-// 	} else if (y === 0) {
-// 		if (x > 0) {
-// 			return 0;
-// 		}
-// 		return -Math.PI;
-// 	}
-// 	if (x < 0) {
-// 		return Math.PI + Math.atan(y/x);
-// 	}
-// 	if (y > 0) {
-// 		return Math.atan(y/x);
-// 	}
-// 	return Math.atan(y/x) + 2*Math.PI;
-// }
+// Quickdraw
+// a small addon to make HTML canvas drawing easier
 
 function ArcTan(x, y) {
 	return Math.atan2(y, x);
