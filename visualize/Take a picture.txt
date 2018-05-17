@@ -1,0 +1,55 @@
+Take a picture
+
+Use filter to get floating point value for how similar the color is to the target color
+Or just use a binary filter
+
+Find the path or detect the end
+    Detect initial point
+    Sample
+        x, y, x', y'
+        sample pattern
+    TakeSample(decay)
+        Fill Percent
+        COM
+
+    starting from sampling the initial point facing straight ahead
+    while (true)
+        if pathSample is empty
+            break
+
+        if endSample is full
+            break
+
+        shift x,y to pathSample com
+        shift x',y' to face in new direction
+
+        add x,y to rectangular_path
+
+        TakeSample(pathSample, decay = 0.5)
+        TakeSample(endSample, decay = 1.0)
+
+    smoothPath(rectangular_path)
+
+    polar_path = make_polar_path(rectangular_path)
+    return polar_path
+
+Send path to teensy --> Input A
+
+Measure velocity --> Input B
+
+Figure out how to merge current path and new path
+Figure out how to adjust the PID target value
+
+Two separate loops:
+    velocity
+    turning
+
+expected Behavior
+    the car drive along a path
+        using only one initial path update
+            it will stop when it reaches the end of the path
+                stop -> decelerate quickly
+
+Things to test:
+    turning radius (coeficcient of friction)
+    stopping distance
