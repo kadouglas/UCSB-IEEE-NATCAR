@@ -27,7 +27,7 @@ void printAllIncoming() {
     while (true) {
         while (incomingBytes == 0) {
             incomingBytes = Wire.available();
-        }k
+        }
         for (int i = 0; i < incomingBytes; i++) {
             Serial.println(Wire.read());
         }
