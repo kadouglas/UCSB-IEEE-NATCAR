@@ -1,41 +1,37 @@
-#include<Wire.h>
 
-int slaveAddress = 0x42;
+#include <Wire.h>
+#define BAUD_RATE 19200
+#define CHAR_BUF 128
 
 void setup() {
-    // start serial connection
-    Serial.begin(9600);
-
-    // join the bus as master
-    Wire.begin();
-
-    //let everything initialize
-    delay(100);
-
-    // infinite echo
-    printAllIncoming();
-
-    // test transmission
-    Wire.beginTransmission(slaveAddress);
-        Wire.write(8);
-    Wire.endTransmission();
-}
-
-void printAllIncoming() {
-    int incomingBytes = Wire.available();
-
-    while (true) {
-        while (incomingBytes == 0) {
-            incomingBytes = Wire.available();
-        }
-        for (int i = 0; i < incomingBytes; i++) {
-            Serial.println(Wire.read());
-        }
-    }
-
+  Serial.begin(BAUD_RATE);
+  Wire.begin();
+  delay(1000); // Give the OpenMV Cam time to bootup.
 }
 
 void loop() {
-    // put your main code here, to run repeatedly:
+  int32_t temp = 0;
+  char buff[CHAR_BUF] = {0};
 
+  Wire.requestFrom(0x12, 2);
+  if(Wire.available() == 2) { // got length?
+
+    temp = Wire.read() | (Wire.read() << 8);
+    delay(1); // Give some setup time...
+
+    Wire.requestFrom(0x12, temp);
+    if(Wire.available() == temp) { // got full message?
+
+      temp = 0;
+      while(Wire.available()) buff[temp++] = Wire.read();
+
+    } else {
+      while(Wire.available()) Wire.read(); // Toss garbage bytes.
+    }
+  } else {
+    while(Wire.available()) Wire.read(); // Toss garbage bytes.
+  }
+
+  Serial.print(buff);
+  delay(1); // Don't loop to quickly.
 }
