@@ -2,6 +2,7 @@
 #include <MouseSensor.h>
 #define motorPWM 2
 #define servoPin 38
+#define killPin 24
 Servo servo1;
 
 //Global Variables
@@ -27,6 +28,14 @@ servo1.attach(servoPin);
 }
 
 void loop() {
+  while( killPin ){
+    setMotorSpeed(0);
+    delay(100);
+  }
+  setMotorSpeed(255);
+  delay(100);
+  setMotorSpeed(0);
+  delay(10000);
 
 }
 
