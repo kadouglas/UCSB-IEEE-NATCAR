@@ -1,37 +1,55 @@
-
+#define PATH_LEN 100
+// 
 #include <Wire.h>
+#include "sendReceive.h"
+#include "smoothing.h"
+#include "path.h"
+#include "homography.h"
 #define BAUD_RATE 19200
-#define CHAR_BUF 128
 
 void setup() {
     Serial.begin(BAUD_RATE);
     Wire.begin();
     delay(1000); // Give the OpenMV Cam time to bootup.
+    Serial.println("Starting");
 }
 
 void loop() {
-    int32_t temp = 0;
-    char buff[CHAR_BUF] = {0};
+    char buff[32];
 
-    Wire.requestFrom(0x12, 2);
-    if(Wire.available() == 2) { // got length?
+    resetPath();
 
-        temp = Wire.read() | (Wire.read() << 8);
-        delay(1); // Give some setup time...
+    bool hasReadPath = false;
+    int read = readData(buff);
+    // Serial.print("Read ");Serial.println(read);
+    readPath(buff, read);
 
-        Wire.requestFrom(0x12, temp);
-        if(Wire.available() == temp) { // got full message?
-
-            temp = 0;
-            while(Wire.available()) buff[temp++] = Wire.read();
-
-        } else {
-            while(Wire.available()) Wire.read(); // Toss garbage bytes.
-        }
-    } else {
-        while(Wire.available()) Wire.read(); // Toss garbage bytes.
+    while (read > 0 && read%2 == 0) {
+        hasReadPath = true;
+        read = readData(buff);
+        // Serial.print("Read again ");Serial.println(read);
+        readPath(buff, read);
     }
 
-    Serial.print(buff);
-    delay(1); // Don't loop to quickly.
+    if (hasReadPath) {
+        printPath();
+
+        setFPath();
+        convertPoints(fpath, pathLen);
+
+        printFPath();
+
+        prunePoints(fpath, pathLen, 2);
+
+        printFPath();
+
+        smoothPoints(fpath, pathLen, M_PI/2, 10);
+        printFPath();
+
+        Serial.println(getFirstRadius(fpath, pathLen, M_PI/2));
+    }
+
+    // take a break
+    delay(1);
+    return;
 }

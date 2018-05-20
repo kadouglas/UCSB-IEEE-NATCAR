@@ -3,8 +3,13 @@
 # This script shows off the binary image filter. This script was originally a
 # test script... but, it can be useful for showing how to use binary.
 
-import pyb, sensor, image, math, time
+import pyb, sensor, image, math, time, ustruct
 from ScannerRect import ScannerRect
+
+# The hardware I2C bus for your OpenMV Cam is always I2C bus 2.
+bus = pyb.I2C(2, pyb.I2C.SLAVE, addr=0x12)
+bus.deinit() # Fully reset I2C device...
+bus = pyb.I2C(2, pyb.I2C.SLAVE, addr=0x12)
 
 sensor.reset()
 sensor.set_framesize(sensor.QQCIF)
@@ -141,12 +146,55 @@ def sampleMulti(scanners,x,y,ang,image,step,scale):
 def scannerScale(y,h):
     return (1-2/9)/h*y+2/9
 
+def sendBase(data):
+    for i in range(100):
+        try:
+            bus.send(ustruct.pack("<h",len(data)), timeout = 10)
+            print("sent size")
+            try:
+                bus.send(data, timeout = 10)
+                print("send data")
+                return True
+            except:
+                pass
+        except:
+            pass
+    return False
+
+def sendData(path, ended):
+    # i2c can only send 32 bytes in one message
+    # so, break down the message into 8-point segments
+    seg_n = int((len(path)+9)/8)
+    #print("Sending",seg_n,"Segments for a path of length",len(path))
+
+    path_i = 0
+    for i in range(seg_n):
+        data = b''
+        a = min(len(path) - path_i, 8)
+        for j in range(a):
+            data += ustruct.pack('<hh',path[path_i][0],path[path_i][1])
+            path_i+=1
+        if i + 1 == seg_n:
+            data += ustruct.pack('<B',ended)
+        # send the data
+        sucess = sendBase(data)
+
+        # if first data and fail, stop sending
+        if i == 0 and not sucess:
+            #print("Failed")
+            return
+    #print("Succeeded")
+
 print('starting')
 
-ang = 0
 
 while True:
-    # print("Looping")
+    if False:
+        path = [[43, 71], [44, 66], [46, 62], [48, 58], [50, 54], [52, 49], [55, 45], [56, 41], [58, 38], [59, 35], [61, 32], [62, 28], [62, 25], [61, 23], [58, 22], [55, 22], [52, 21], [48, 20], [44, 20], [41, 19], [38, 18], [35, 17], [32, 16], [29, 14], [27, 13], [25, 13], [24, 13]]
+        ended = False
+        sendData(path, ended)
+        continue
+
     clock.tick()
     img = sensor.snapshot()
     img.binary([threshold])
@@ -157,35 +205,24 @@ while True:
          ScannerRect(2,4,3, 5,0)
     ]
 
-    # sample(ScannerRect(0,0,0,0,0),img.width()/2,img.height()/2,ang,img,1)
-    # ang += 0.1
-    # time.sleep(500)
-    # continue
-
     endScanners = [
         ScannerRect(8,25,0,20,0),
         ScannerRect(8,25,0,-20,0)
     ]
 
-    if False:
-        x = img.width()/2
-        y = img.height()
-        sampleMulti(scanners,x,y,-math.pi/2,img,1,1)
-        continue
-
-    #scanner.scan(loopFcn, 20, 20, 0.7, img, 2)
     x, y = getFirstPoint(img, sw = math.floor(img.width()/2))
     # make sure there is an initial point
     if not x: continue
 
     path = []
     ended = False
-    #x = img.width()/2
-    #y = img.height()/2
+
     scale = scannerScale(y, img.height())
     scanRes = sampleMulti(scanners,x,y,-math.pi/2,img,2,scale)
 
-    while scanRes[-1][1] >  255*3:
+    path_n = 0
+    while scanRes[-1][1] >  255*3 and path_n < 15:
+        path_n += 1
         path.append([x,y])
         x1 = int(scanRes[-1][3])
         y1 = int(scanRes[-1][4])
@@ -193,33 +230,18 @@ while True:
 
         # test for end
         endScanRes = sampleMulti(endScanners,x,y,ang,img,2,scale)
-        img.draw_line(x,y,x1,y1,(0,255,0))
-        # print(endScanRes[-1][2])
         if endScanRes[-1][2] > 0.35:
-            print('ended')
-            img.draw_circle(x,y,5,(255,0,0))
             ended = True
             break
 
         x = x1
         y = y1
         scale = scannerScale(y, img.height())
-        #print(scale)
         scanRes = sampleMulti(scanners,x,y,ang,img,2,scale)
-        #path.append([x,y])
-
-    #for p in path:
-        #img.draw_circle(p[0],p[1],5,(0,255,0))
-    print(path)
-    print(ended)
-    #print('Fill: {}'.format(scanInfo[0]/scanInfo[1]))
-    #print('{}, {}'.format(int(scanInfo[3]), int(scanInfo[4])))
-    #print()
-    #sang = 0.0
-    #while sang < 6.2:
-        #scanner.scan(loopFcn, 50, 50, sang, img, 1)
-        #sang += 0.5
-    #print(clock.fps())
+    # print(path)
+    # print(ended)
+    sendData(path, ended)
+    print(clock.fps())
 
 # sample data
 # [[43, 71], [44, 66], [46, 62], [48, 58], [50, 54], [52, 49], [55, 45], [56, 41], [58, 38], [59, 35], [61, 32], [62, 28], [62, 25], [61, 23], [58, 22], [55, 22], [52, 21], [48, 20], [44, 20], [41, 19], [38, 18], [35, 17], [32, 16], [29, 14], [27, 13], [25, 13], [24, 13]]

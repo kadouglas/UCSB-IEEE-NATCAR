@@ -1,6 +1,6 @@
 
 import sensor, image, time, sys
-MARKER_COLOR = (0, 100, 20, 82, 3, 127)
+MARKER_COLOR = (0, 68, 13, 127, -128, 127)
 # IEEE_NIGHT_MARKER_COLOR = (0, 100, 18, 127, -5, 127)
 REAL_POINTS = [-4,-4,4,4,10,18,18,10]
 
@@ -59,16 +59,22 @@ def solveHomography(a):
 def findCalibPoints():
     sensor.reset()
     sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.QVGA)
+    sensor.set_framesize(sensor.QQCIF)
     #sensor.set_auto_gain(False) # must be turned off for color tracking
     #sensor.set_auto_whitebal(False) # must be turned off for color tracking
     sensor.skip_frames(time = 1500)
     time.sleep(2000)
     img = sensor.snapshot()
-    blobs = img.find_blobs([MARKER_COLOR],pixels_threshold = 5)
+    #img.binary([MARKER_COLOR])
+    img.binary([MARKER_COLOR])
+    img.dilate(1)
+    blobs = img.find_blobs([(45, 100, -128, 127, -128, 127)], pixels_threshold=1, area_threshold=1,x_stride=1, y_stride=1)
     while len(blobs) != 4:
+        print(len(blobs))
         img = sensor.snapshot()
-        blobs = img.find_blobs([MARKER_COLOR],pixels_threshold = 5)
+        img.binary([MARKER_COLOR])
+        img.dilate(1)
+        blobs = img.find_blobs([MARKER_COLOR])
 
     print("Found 4 points")
     blobs.sort(key = lambda x: x.cx())
