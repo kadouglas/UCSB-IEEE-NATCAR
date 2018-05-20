@@ -1,13 +1,13 @@
 #include <Servo.h>
-#include <MouseSensor.h>
+//#include <MouseSensor.h>
 #define motorPWM 2
 #define servoPin 38
 #define killPin 24
+#define wheelbaseLength = 10.19
 Servo servo1;
 
 //Global Variables
 //Servo
-int servoPos = 180;
 int servoMin = 160;
 int servoMax = 215;
 
@@ -20,7 +20,7 @@ int speedPWM = 0;
 
 
 void setMotorSpeed(int spd);
-void setServoDirection(int angle);
+void setCurvature(int curvature);
 
 void setup() {
 pinMode(motorPWM, OUTPUT);
@@ -32,7 +32,8 @@ void loop() {
     setMotorSpeed(0);
     delay(100);
   }
-  setMotorSpeed(255);
+  setCurvature(0);
+  setMotorSpeed(10);
   delay(100);
   setMotorSpeed(0);
   delay(10000);
@@ -52,8 +53,9 @@ void setMotorSpeed(int spd){
   speedPWM = spd;
 }
 
-void setServoDirection(int angle)
+void setCurvature(double curvature)
 {
+  angle = atan(10.19*curvature)
   if(angle < servoMin){
     angle = servoMin;
   }
