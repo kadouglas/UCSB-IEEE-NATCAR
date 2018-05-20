@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <math.h>
 //#include <MouseSensor.h>
 #define motorPWM 2
 #define servoPin 38
@@ -8,6 +9,8 @@ Servo servo1;
 
 //Global Variables
 //Servo
+int servoPos = 180;
+int servoCenter = 180;
 int servoMin = 160;
 int servoMax = 215;
 
@@ -20,7 +23,7 @@ int speedPWM = 0;
 
 
 void setMotorSpeed(int spd);
-void setCurvature(int curvature);
+void setCurvature(float curvature);
 
 void setup() {
 pinMode(motorPWM, OUTPUT);
@@ -28,11 +31,11 @@ servo1.attach(servoPin);
 }
 
 void loop() {
-  while( killPin ){
+  while( !killPin ){
     setMotorSpeed(0);
     delay(100);
   }
-  setCurvature(0);
+  setCurvature(double(0));
   setMotorSpeed(10);
   delay(100);
   setMotorSpeed(0);
@@ -55,13 +58,8 @@ void setMotorSpeed(int spd){
 
 void setCurvature(double curvature)
 {
-  angle = atan(10.19*curvature)
-  if(angle < servoMin){
-    angle = servoMin;
-  }
-  else if(angle > servoMax){
-    angle = servoMax;
-  }
+  double angle = atan(10.19*curvature)*180/M_PI+servoCenter;
+  angle = constrain(angle, servoMin, servoMax);
   servo1.write(angle);
   servoPos = angle;
 }
